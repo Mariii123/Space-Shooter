@@ -1,4 +1,5 @@
-import pygame,random,time
+import pygame,random,time,sys
+from os import path
 pygame.init()
 black=(0,0,0)
 red=(255,0,0)
@@ -15,8 +16,6 @@ powerup=5000
 hi_score_file=open("highscore.txt",'r')
 hi_score=int(hi_score_file.read())
 hi_score_file.close()
-pygame.init()
-pygame.mixer.init()
 screen=pygame.display.set_mode([dw,dh])
 pygame.display.set_caption("Space war")
 clock=pygame.time.Clock()
@@ -76,27 +75,36 @@ class Rocket(pygame.sprite.Sprite):
         self.image=pygame.transform.scale(self.image,[40,70])
         self.rect=self.image.get_rect()
         self.rect.x=200
-        self.rect.y=dh-80
+        self.rect.y=dh-80        
         self.vx=0
         self.last=pygame.time.get_ticks()
         self.ptime=pygame.time.get_ticks()
         self.shot_delay=250
+        self.power=1
+    def powerup(self):
+        self.power+=1
+        self.ptime=pygame.time.get_ticks()
     def shoot(self):
         now=pygame.time.get_ticks()
+        
         if now-self.last>self.shot_delay:
-            self.last=now
-            bullet=Bullet(self.rect.centerx,self.rect.top)
-            all_sprites.add(bullet)
-            bullets.add(bullet)
-        elif now-self.ptime>powerup:
-            self.ptime=now
-            bullet1=Bullet(self.rect.left,self.rect.top)
-            all_sprites.add(bullet1)
-            bullet2=Bullet(self.rect.right,self.rect.top)
-            all_sprites.add(bullet2)
-            bullets.add(bullet1)
-            bullets.add(bullet2)
+            if self.power==1:
+                self.last=now
+                bullet=Bullet(self.rect.centerx,self.rect.top)
+                all_sprites.add(bullet)
+                bullets.add(bullet)
+            if self.power>=2:  
+                self.last=now
+                bullet1=Bullet(self.rect.left,self.rect.top)
+                all_sprites.add(bullet1)
+                bullets.add(bullet1)
+                bullet2=Bullet(self.rect.right,self.rect.top)
+                all_sprites.add(bullet2)
+                bullets.add(bullet2)
     def update(self):
+        if self.power>=2 and pygame.time.get_ticks()-self.ptime>powerup:
+            self.power-=1
+            self.ptime=pygame.time.get_ticks()
         self.vx=0
         keys=pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -155,6 +163,7 @@ class Meteor(pygame.sprite.Sprite):
             self.rect.y=random.randrange(-50,-20)
             self.vx=random.randint(-1,1)
             self.vy=random.randint(1,6)
+
 class Bullet(pygame.sprite.Sprite):
     def __init__(self,x,y):
         super().__init__()
@@ -172,9 +181,19 @@ def newmeteor():
     meteor=Meteor()
     all_sprites.add(meteor)
     meteors.add(meteor)
+def drawlives(surf,lives,x,y):
+    for i in range(lives):
+        img=pygame.image.load("lives.png")
+        img=pygame.transform.scale(img,[15,30])
+        imgrect=img.get_rect()
+        imgrect.x=x+30*i
+        imgrect.y=y
+        screen.blit(img,imgrect)
+      
 over=False
 intro=True
 score=0
+hit=0
 while 1:
     clock.tick(60)
     if intro:
@@ -187,8 +206,11 @@ while 1:
         powers=pygame.sprite.Group()
         rocket=Rocket()
         all_sprites.add(rocket)
+        hit=0
+        lives=3
         for i in  range(5):
            newmeteor()
+
     hi_score_file=open("highscore.txt",'r')
     hi_score=int(hi_score_file.read())
     hi_score_file.close()
@@ -196,6 +218,7 @@ while 1:
         if event.type==pygame.QUIT:
             pygame.quit()
             quit()
+
         elif event.type==pygame.KEYDOWN:
             if event.key==pygame.K_RETURN:
                 pause()
@@ -203,36 +226,50 @@ while 1:
         gover()
         over=False
         score=0
+        hit=0
         all_sprites=pygame.sprite.Group()
         meteors=pygame.sprite.Group()
         bullets=pygame.sprite.Group()
         powers=pygame.sprite.Group()
         rocket=Rocket()
         all_sprites.add(rocket)
+        lives=3
         for i in  range(5):
            newmeteor()
+
     all_sprites.update()
     hits=pygame.sprite.groupcollide(bullets,meteors,1,1)
     if hits:
+
         if random.random()>0.9:
             pow1=Pow(random.choice(["pow1.png","pow2.png"]))
             all_sprites.add(pow1)
             powers.add(pow1)
+            ssound.play()
         newmeteor()
         score+=5
     hits1=pygame.sprite.spritecollide(rocket,meteors,1)
     if hits1:
-          over=True
+        hit+=1
+        lives-=1
+        newmeteor()
     hits2=pygame.sprite.spritecollide(rocket,powers,1)
     if hits2 and pow1.img=="pow1.png":
         score+=10
+        rocket.powerup()
     if hits2 and pow1.img=="pow2.png":
-        score+=30  
+        score+=30
+        rocket.powerup()
+    
     screen.fill(light_blue)
 
     all_sprites.draw(screen)
-    msg("Score"+str(score),blue,20,250,20)
+    msg("Score:"+str(score),blue,20,250,20)
     if (hi_score)<score:
         hi_score_file=open("highscore.txt",'w+')
         hi_score_file.write(str(score))
+        
+    if hit>3:
+        over=True
+    drawlives(screen,lives,400,10)
     pygame.display.flip()
