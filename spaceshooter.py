@@ -161,7 +161,7 @@ class Boss(pygame.sprite.Sprite):
 class EBullet(pygame.sprite.Sprite):
     def __init__(self,x,y):
         super().__init__()
-        self.image=pygame.image.load("bullet.png")
+        self.image=pygame.image.load("bossbullet.png")
         self.image=pygame.transform.flip(self.image,0,1)
         self.rect=self.image.get_rect()
         self.rect.x=x
