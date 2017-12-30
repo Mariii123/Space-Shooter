@@ -1,4 +1,5 @@
 import pygame,random,time,sys
+from pygame.locals import *
 from os import path
 pygame.init()
 black=(0,0,0)
@@ -13,6 +14,8 @@ light_blue=(0,255,255)
 dh=500
 dw=500
 powerup=5000
+bosstime=10000
+starttime=pygame.time.get_ticks()
 hi_score_file=open("highscore.txt",'r')
 hi_score=int(hi_score_file.read())
 hi_score_file.close()
@@ -131,6 +134,43 @@ class Pow(pygame.sprite.Sprite):
         self.rect.y+=self.vy
         if self.rect.y>500:
             self.kill()
+class Boss(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.i1=pygame.image.load("boss.png")
+        self.i1=pygame.transform.flip(self.i1,0,1)
+        self.i1=pygame.transform.scale(self.i1,[40,70])
+        self.image=self.i1
+        self.rect=self.image.get_rect()
+        self.rect.x=200
+        self.rect.y=0
+        self.vx=-3
+        self.last=pygame.time.get_ticks()
+    def update(self):
+        now=pygame.time.get_ticks()
+        if now-self.last>500:
+            self.last=now
+            ebullet=EBullet(self.rect.centerx,self.rect.bottom)
+            all_sprites.add(ebullet)
+            ebullets.add(ebullet)
+        if self.rect.left<=0:
+            self.vx=3
+        elif self.rect.right>=400:
+            self.vx=-3
+        self.rect.x+=self.vx        
+class EBullet(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        super().__init__()
+        self.image=pygame.image.load("bullet.png")
+        self.image=pygame.transform.flip(self.image,0,1)
+        self.rect=self.image.get_rect()
+        self.rect.x=x
+        self.rect.y=y
+        self.vy=4
+    def  update(self):
+        self.rect.y+=self.vy
+        if self.rect.y<=0:
+            self.kill()        
 class Meteor(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -168,7 +208,6 @@ class Bullet(pygame.sprite.Sprite):
     def __init__(self,x,y):
         super().__init__()
         self.image=pygame.image.load("bullet.png")
-
         self.rect=self.image.get_rect()
         self.rect.x=x
         self.rect.y=y
@@ -177,6 +216,10 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y+=self.vy
         if self.rect.y<=0:
             self.kill()
+def newboss():
+    boss=Boss()
+    all_sprites.add(boss)
+    bosses.add(boss)            
 def newmeteor():
     meteor=Meteor()
     all_sprites.add(meteor)
@@ -196,6 +239,7 @@ score=0
 hit=0
 while 1:
     clock.tick(60)
+    now=pygame.time.get_ticks()
     if intro:
         start()
         intro=False
@@ -203,12 +247,14 @@ while 1:
         all_sprites=pygame.sprite.Group()
         meteors=pygame.sprite.Group()
         bullets=pygame.sprite.Group()
+        ebullets=pygame.sprite.Group()
+        bosses=pygame.sprite.Group()
         powers=pygame.sprite.Group()
         rocket=Rocket()
         all_sprites.add(rocket)
         hit=0
         lives=3
-        for i in  range(5):
+        for i in  range(3):
            newmeteor()
 
     hi_score_file=open("highscore.txt",'r')
@@ -245,14 +291,23 @@ while 1:
             pow1=Pow(random.choice(["pow1.png","pow2.png"]))
             all_sprites.add(pow1)
             powers.add(pow1)
-            ssound.play()
+        
         newmeteor()
         score+=5
+    if now-starttime>bosstime:
+        starttime=now
+        newboss()
+        
     hits1=pygame.sprite.spritecollide(rocket,meteors,1)
     if hits1:
         hit+=1
         lives-=1
         newmeteor()
+    hits3=pygame.sprite.spritecollide(rocket,ebullets,1)
+    if hits3:
+        hit+=1
+        lives-=1
+        newmeteor()    
     hits2=pygame.sprite.spritecollide(rocket,powers,1)
     if hits2 and pow1.img=="pow1.png":
         score+=10
@@ -260,7 +315,10 @@ while 1:
     if hits2 and pow1.img=="pow2.png":
         score+=30
         rocket.powerup()
-    
+    hits4=pygame.sprite.groupcollide(bullets,bosses,1,1)
+    if hits:
+        score+=75
+
     screen.fill(light_blue)
 
     all_sprites.draw(screen)
