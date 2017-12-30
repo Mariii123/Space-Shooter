@@ -22,12 +22,20 @@ hi_score_file.close()
 screen=pygame.display.set_mode([dw,dh])
 pygame.display.set_caption("Space war")
 clock=pygame.time.Clock()
+i=pygame.image.load("swar1.png")
+i=pygame.transform.scale(i,[32,32])
+icon=pygame.display.set_icon(i)
 def msg(txt,color,size,x,y):
     font=pygame.font.SysFont("comicsansms",size,bold=1)
     mtxt=font.render(txt,True,color)
     mrect=mtxt.get_rect()
     mrect.center=x,y
     screen.blit(mtxt,mrect)
+def hp(fill):
+    outlinerect=pygame.draw.rect(screen,white,(20,40,100,20),2)
+    fill=100-fill
+    hbar=pygame.draw.rect(screen,green,(20,40,fill,20))
+    pygame.display.update()    
 def start():
     wait=1
     while wait:
@@ -163,6 +171,7 @@ class EBullet(pygame.sprite.Sprite):
         super().__init__()
         self.image=pygame.image.load("bossbullet.png")
         self.image=pygame.transform.flip(self.image,0,1)
+        self.image=pygame.transform.scale(self.image,[20,35])
         self.rect=self.image.get_rect()
         self.rect.x=x
         self.rect.y=y
@@ -254,9 +263,9 @@ while 1:
         all_sprites.add(rocket)
         hit=0
         lives=3
+        hlife=0
         for i in  range(4):
            newmeteor()
-
     hi_score_file=open("highscore.txt",'r')
     hi_score=int(hi_score_file.read())
     hi_score_file.close()
@@ -273,6 +282,7 @@ while 1:
         over=False
         score=0
         hit=0
+        hlife=100
         all_sprites=pygame.sprite.Group()
         meteors=pygame.sprite.Group()
         bullets=pygame.sprite.Group()
@@ -280,20 +290,18 @@ while 1:
         rocket=Rocket()
         all_sprites.add(rocket)
         lives=3
-        for i in  range(5):
+        for i in  range(4):
            newmeteor()
 
     all_sprites.update()
     hits=pygame.sprite.groupcollide(bullets,meteors,1,1)
     if hits:
-
+        newmeteor()
+        score+=5
         if random.random()>0.9:
             pow1=Pow(random.choice(["pow1.png","pow2.png"]))
             all_sprites.add(pow1)
             powers.add(pow1)
-        
-        newmeteor()
-        score+=5
     if now-starttime>bosstime:
         starttime=now
         newboss()
@@ -301,13 +309,12 @@ while 1:
     hits1=pygame.sprite.spritecollide(rocket,meteors,1)
     if hits1:
         hit+=1
-        lives-=1
+        hlife+=15
         newmeteor()
     hits3=pygame.sprite.spritecollide(rocket,ebullets,1)
     if hits3:
         hit+=1
-        lives-=1
-        newmeteor()    
+        hlife+=30    
     hits2=pygame.sprite.spritecollide(rocket,powers,1)
     if hits2 and pow1.img=="pow1.png":
         score+=10
@@ -326,8 +333,11 @@ while 1:
     if (hi_score)<score:
         hi_score_file=open("highscore.txt",'w+')
         hi_score_file.write(str(score))
-        
-    if hit>3:
+    if hlife>=100:
+        lives-=1
+        hlife=0
+    if lives<=0:
         over=True
     drawlives(screen,lives,400,10)
+    hp(hlife)
     pygame.display.flip()
