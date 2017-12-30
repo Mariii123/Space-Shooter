@@ -254,7 +254,7 @@ while 1:
         all_sprites.add(rocket)
         hit=0
         lives=3
-        for i in  range(3):
+        for i in  range(4):
            newmeteor()
 
     hi_score_file=open("highscore.txt",'r')
