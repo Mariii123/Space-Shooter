@@ -35,7 +35,7 @@ def hp(fill):
     outlinerect=pygame.draw.rect(screen,white,(20,40,100,20),2)
     fill=100-fill
     hbar=pygame.draw.rect(screen,green,(20,40,fill,20))
-    pygame.display.update()    
+    pygame.display.update()
 def start():
     wait=1
     while wait:
@@ -86,25 +86,27 @@ class Rocket(pygame.sprite.Sprite):
         self.image=pygame.transform.scale(self.image,[40,70])
         self.rect=self.image.get_rect()
         self.rect.x=200
-        self.rect.y=dh-80        
+        self.rect.y=dh-80
         self.vx=0
         self.last=pygame.time.get_ticks()
         self.ptime=pygame.time.get_ticks()
         self.shot_delay=250
         self.power=1
     def powerup(self):
-        self.power+=1
+        self.power=2
+        self.ptime=pygame.time.get_ticks()
+    def tripleshot(self):
+        self.power=3
         self.ptime=pygame.time.get_ticks()
     def shoot(self):
         now=pygame.time.get_ticks()
-        
         if now-self.last>self.shot_delay:
             if self.power==1:
                 self.last=now
                 bullet=Bullet(self.rect.centerx,self.rect.top)
                 all_sprites.add(bullet)
                 bullets.add(bullet)
-            if self.power>=2:  
+            if self.power==2:
                 self.last=now
                 bullet1=Bullet(self.rect.left,self.rect.top)
                 all_sprites.add(bullet1)
@@ -112,9 +114,23 @@ class Rocket(pygame.sprite.Sprite):
                 bullet2=Bullet(self.rect.right,self.rect.top)
                 all_sprites.add(bullet2)
                 bullets.add(bullet2)
+            if self.power==3:
+                self.last=now
+                bullet1=Bullet(self.rect.left,self.rect.top)
+                all_sprites.add(bullet1)
+                bullets.add(bullet1)
+                bullet=Bullet(self.rect.centerx,self.rect.top)
+                all_sprites.add(bullet)
+                bullets.add(bullet)
+                bullet2=Bullet(self.rect.right,self.rect.top)
+                all_sprites.add(bullet2)
+                bullets.add(bullet2)
     def update(self):
-        if self.power>=2 and pygame.time.get_ticks()-self.ptime>powerup:
+        if self.power==2 and pygame.time.get_ticks()-self.ptime>powerup:
             self.power-=1
+            self.ptime=pygame.time.get_ticks()
+        if self.power==3 and pygame.time.get_ticks()-self.ptime>powerup:
+            self.power-=2
             self.ptime=pygame.time.get_ticks()
         self.vx=0
         keys=pygame.key.get_pressed()
@@ -124,7 +140,6 @@ class Rocket(pygame.sprite.Sprite):
             self.vx=5
         if keys[pygame.K_SPACE]:
             self.shoot()
-          
         self.rect.x+=self.vx
         if self.rect.left<=0:
             self.rect.left=0
@@ -143,6 +158,8 @@ class Pow(pygame.sprite.Sprite):
         self.rect.y+=self.vy
         if self.rect.y>500:
             self.kill()
+class Explosion(pygame.sprite.Sprite):
+    pass
 class Boss(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -166,7 +183,7 @@ class Boss(pygame.sprite.Sprite):
             self.vx=3
         elif self.rect.right>=500:
             self.vx=-3
-        self.rect.x+=self.vx        
+        self.rect.x+=self.vx
 class EBullet(pygame.sprite.Sprite):
     def __init__(self,x,y):
         super().__init__()
@@ -180,7 +197,7 @@ class EBullet(pygame.sprite.Sprite):
     def  update(self):
         self.rect.y+=self.vy
         if self.rect.y<=0:
-            self.kill()        
+            self.kill()
 class Meteor(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -229,7 +246,7 @@ class Bullet(pygame.sprite.Sprite):
 def newboss():
     boss=Boss()
     all_sprites.add(boss)
-    bosses.add(boss)            
+    bosses.add(boss)
 def newmeteor():
     meteor=Meteor()
     all_sprites.add(meteor)
@@ -241,7 +258,7 @@ def drawlives(surf,lives,x,y):
         imgrect=img.get_rect()
         imgrect.x=x+30*i
         imgrect.y=y
-        screen.blit(img,imgrect)     
+        screen.blit(img,imgrect)
 over=False
 intro=True
 score=0
@@ -305,7 +322,7 @@ while 1:
     if now-starttime>bosstime:
         starttime=now
         newboss()
-        
+
     hits1=pygame.sprite.spritecollide(rocket,meteors,1)
     if hits1:
         hit+=1
@@ -314,11 +331,11 @@ while 1:
     hits3=pygame.sprite.spritecollide(rocket,ebullets,1)
     if hits3:
         hit+=1
-        hlife+=30    
+        hlife+=30
     hits2=pygame.sprite.spritecollide(rocket,powers,1)
     if hits2 and pow1.img=="pow1.png":
-        score+=10
-        rocket.powerup()
+        score+=50
+        rocket.tripleshot()
     if hits2 and pow1.img=="pow2.png":
         score+=30
         rocket.powerup()
