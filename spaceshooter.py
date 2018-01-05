@@ -124,6 +124,7 @@ class Rocket(pygame.sprite.Sprite):
             self.vx=5
         if keys[pygame.K_SPACE]:
             self.shoot()
+          
         self.rect.x+=self.vx
         if self.rect.left<=0:
             self.rect.left=0
@@ -163,7 +164,7 @@ class Boss(pygame.sprite.Sprite):
             ebullets.add(ebullet)
         if self.rect.left<=0:
             self.vx=3
-        elif self.rect.right>=400:
+        elif self.rect.right>=500:
             self.vx=-3
         self.rect.x+=self.vx        
 class EBullet(pygame.sprite.Sprite):
@@ -240,8 +241,7 @@ def drawlives(surf,lives,x,y):
         imgrect=img.get_rect()
         imgrect.x=x+30*i
         imgrect.y=y
-        screen.blit(img,imgrect)
-      
+        screen.blit(img,imgrect)     
 over=False
 intro=True
 score=0
@@ -282,7 +282,7 @@ while 1:
         over=False
         score=0
         hit=0
-        hlife=100
+        hlife=0
         all_sprites=pygame.sprite.Group()
         meteors=pygame.sprite.Group()
         bullets=pygame.sprite.Group()
@@ -336,8 +336,10 @@ while 1:
     if hlife>=100:
         lives-=1
         hlife=0
+        starttime=pygame.time.get_ticks()
     if lives<=0:
         over=True
+        starttime=pygame.time.get_ticks()
     drawlives(screen,lives,400,10)
     hp(hlife)
     pygame.display.flip()
